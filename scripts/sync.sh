@@ -130,6 +130,11 @@ EXCLUSIONS=(
     ".venv"
     "*.egg-info"
     ".ruff_cache"
+    "htmlcov"
+    ".coverage"
+    "coverage.xml"
+    "*.py[cod]"
+    ".eggs"
 )
 
 # Directories to pull FROM the server (not pushed with code)
@@ -296,8 +301,9 @@ _spinner() {
     tput cnorm 2>/dev/null
 }
 
-# Live progress monitor — polls the rsync output file for progress lines
-# and displays bytes transferred, percentage, and speed.
+# Live progress monitor — polls the rsync output file for progress lines,
+# displays bytes transferred / percentage / speed, and prints each file
+# as it is transferred in real time.
 # Usage:  rsync ... > tmpfile &
 #         _progress_monitor $! tmpfile "label"
 _progress_monitor() {
@@ -307,6 +313,7 @@ _progress_monitor() {
     local n=${#frames[@]}
     local nc=${#colors[@]}
     local i=0 start=$SECONDS last_progress="" last_elapsed=-1
+    local shown_files=0
 
     tput civis 2>/dev/null
 
@@ -314,6 +321,24 @@ _progress_monitor() {
         local elapsed=$(( SECONDS - start ))
         local ts
         ts=$(_fmt_elapsed "$elapsed")
+
+        # Every ~0.5s, check for newly transferred files and print them live
+        if (( i % 3 == 0 )); then
+            local new_files
+            new_files=$(tr '\r' '\n' < "$tmpfile" 2>/dev/null \
+                | grep -E '^[><]f|^\*deleting' \
+                | tail -n +$(( shown_files + 1 ))) || true
+            if [[ -n "$new_files" ]]; then
+                local new_count=0
+                while IFS= read -r fline; do
+                    [[ -z "$fline" ]] && continue
+                    printf "\r\033[K"
+                    _print_file_line "$fline"
+                    (( new_count++ )) || true
+                done <<< "$new_files"
+                (( shown_files += new_count )) || true
+            fi
+        fi
 
         # Read last 2KB of output, extract latest progress line (contains %)
         local pline
@@ -340,6 +365,21 @@ _progress_monitor() {
         sleep 0.15
     done
 
+    # After process ends, show any remaining files not yet displayed
+    local remaining
+    remaining=$(tr '\r' '\n' < "$tmpfile" 2>/dev/null \
+        | grep -E '^[><]f|^\*deleting' \
+        | tail -n +$(( shown_files + 1 ))) || true
+    if [[ -n "$remaining" ]]; then
+        while IFS= read -r fline; do
+            [[ -z "$fline" ]] && continue
+            printf "\r\033[K"
+            _print_file_line "$fline"
+            (( shown_files++ )) || true
+        done <<< "$remaining"
+    fi
+
+    _MONITOR_SHOWN_FILES=$shown_files
     printf "\r\033[K"
     tput cnorm 2>/dev/null
 }
@@ -387,6 +427,7 @@ acquire_lock() {
 # Globals for safe cleanup of background work
 _BG_PID=""
 _TMPFILES=()
+_MONITOR_SHOWN_FILES=0
 
 _mktemp() {
     local f
@@ -407,7 +448,14 @@ cleanup() {
     for f in "${_TMPFILES[@]}"; do rm -f "$f" 2>/dev/null; done
     rm -rf "$LOCKDIR"
 }
-trap cleanup EXIT INT TERM HUP
+_handle_interrupt() {
+    printf '\n'
+    warn "Interrupted."
+    cleanup
+    exit 130
+}
+trap cleanup EXIT
+trap _handle_interrupt INT TERM HUP
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #  EXCLUSION ARRAYS — built once at startup
@@ -426,6 +474,18 @@ _glob_to_regex() {
     pat="${pat//\*/.*}"     # glob * → regex .*
     pat="${pat//\?/.}"      # glob ? → regex .
     echo "$pat"
+}
+
+# Print a single file-change line with appropriate symbol and color
+_print_file_line() {
+    local line="$1"
+    if [[ "$line" =~ ^\>f ]]; then
+        printf '    %s %s\n' "${GREEN}${SYM_UP}${RST}" "${line:12}"
+    elif [[ "$line" =~ ^\<f ]]; then
+        printf '    %s %s\n' "${BLUE}${SYM_DOWN}${RST}" "${line:12}"
+    elif [[ "$line" == \*deleting* ]]; then
+        printf '    %s %s\n' "${RED}${SYM_DEL}${RST}" "$(_strip_deleting "$line")"
+    fi
 }
 
 # Base exclusions (used for full push/pull and sync-dir pulls)
@@ -570,25 +630,24 @@ do_rsync() {
     _debug "transfer cmd: ${actual_cmd[*]} ${src} ${dst}"
     local tmpfile
     tmpfile=$(_mktemp)
+    _MONITOR_SHOWN_FILES=0
     "${actual_cmd[@]}" "$src" "$dst" > "$tmpfile" 2>&1 &
     _BG_PID=$!
     _progress_monitor "$_BG_PID" "$tmpfile" "$label"
     wait "$_BG_PID"
     local rc=$?
     _BG_PID=""
-    local output
-    output=$(<"$tmpfile")
-    rm -f "$tmpfile"
     local elapsed=$(( SECONDS - start ))
 
     if (( rc != 0 )); then
         err "Rsync failed for ${BOLD}${label}${RST} (exit ${rc})"
         if (( DEBUG )); then
             _debug "full rsync output follows:"
-            printf '%s\n' "$output" >&2
+            cat "$tmpfile" >&2
         else
-            printf '%s\n' "$output" | tail -10
+            tail -10 "$tmpfile"
         fi
+        rm -f "$tmpfile"
         if (( rc == 30 )); then
             warn "Timeout — the connection stalled for >${RSYNC_IO_TIMEOUT}s. Check network/VPN."
         elif (( rc == 5 )); then
@@ -606,32 +665,29 @@ do_rsync() {
     fi
 
     # ── Display results ─────────────────────────────────────────────────
-    _display_results "$output" "$label" "$elapsed"
+    _display_results "$tmpfile" "$label" "$elapsed"
+    rm -f "$tmpfile"
 }
 
 _display_results() {
-    local output="$1" label="$2" elapsed="$3"
+    local tmpfile="$1" label="$2" elapsed="$3"
 
-    # Normalise \r to \n so progress2 lines don't merge with itemize lines
-    # Pure bash — avoids a subshell + tr pipeline
-    output="${output//$'\r'/$'\n'}"
+    # Use tr + grep (fast C tools) instead of bash string ops on huge output.
+    # The old approach — output="${output//$'\r'/$'\n'}" then a bash while-read
+    # loop — was O(n²) and caused multi-second delays on large syncs.
+    local clean
+    clean=$(tr '\r' '\n' < "$tmpfile")
 
-    # Single-pass: count and collect display lines simultaneously
+    local all_changes
+    all_changes=$(grep -E '^[><]f|^\*deleting' <<< "$clean" || true)
+
+    # Count changes using grep -c (fast)
     local sent=0 recv=0 deleted=0
-    local -a display_lines=()
-
-    while IFS= read -r line; do
-        if [[ "$line" =~ ^\>f ]]; then
-            (( sent++ )) || true
-            display_lines+=("    ${GREEN}${SYM_UP}${RST} ${line:12}")
-        elif [[ "$line" =~ ^\<f ]]; then
-            (( recv++ )) || true
-            display_lines+=("    ${BLUE}${SYM_DOWN}${RST} ${line:12}")
-        elif [[ "$line" == \*deleting* ]]; then
-            (( deleted++ )) || true
-            display_lines+=("    ${RED}${SYM_DEL}${RST} $(_strip_deleting "$line")")
-        fi
-    done <<< "$output"
+    if [[ -n "$all_changes" ]]; then
+        sent=$(grep -cE '^>f' <<< "$all_changes") || sent=0
+        recv=$(grep -cE '^<f' <<< "$all_changes") || recv=0
+        deleted=$(grep -cF '*deleting' <<< "$all_changes") || deleted=0
+    fi
 
     local total=$(( sent + recv + deleted ))
 
@@ -640,16 +696,21 @@ _display_results() {
         return
     fi
 
-    # Print collected file changes
-    echo ""
-    for dl in "${display_lines[@]}"; do
-        printf '%s\n' "$dl"
-    done
+    # Show any files not already displayed by the progress monitor
+    if (( total > _MONITOR_SHOWN_FILES )); then
+        echo ""
+        local remaining
+        remaining=$(tail -n +$(( _MONITOR_SHOWN_FILES + 1 )) <<< "$all_changes")
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            _print_file_line "$line"
+        done <<< "$remaining"
+    fi
 
     # Extract transfer speed and total size from rsync --stats output
     local xfer_speed total_size
-    xfer_speed=$(grep -oE '[0-9,.]+[KMG]? bytes/sec' <<< "$output" | head -1) || true
-    total_size=$(grep -E '^Total transferred file size' <<< "$output" | grep -oE '[0-9,.]+[KMG]?' | head -1) || true
+    xfer_speed=$(grep -oE '[0-9,.]+[KMG]? bytes/sec' <<< "$clean" | head -1) || true
+    total_size=$(grep -E '^Total transferred file size' <<< "$clean" | grep -oE '[0-9,.]+[KMG]?' | head -1) || true
 
     # Summary line
     echo ""
