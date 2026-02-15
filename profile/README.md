@@ -1,39 +1,40 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://placehold.co/240x48/0a0a0a/ffffff?text=WithoutBall&font=inter">
-  <source media="(prefers-color-scheme: light)" srcset="https://placehold.co/240x48/ffffff/0a0a0a?text=WithoutBall&font=inter">
-  <img alt="Organization Name" src="https://placehold.co/240x48/0a0a0a/ffffff?text=WithoutBall&font=inter" height="48">
-</picture>
+# WithoutBall
 
-### Tagline goes here.
+### The intelligence layer for modern football.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+From personal biomechanics to professional match analytics — a next-generation AI + big data platform that turns raw movement into winning insights.
 
 ---
 
-**Feature One** &nbsp;&middot;&nbsp; **Feature Two** &nbsp;&middot;&nbsp; **Feature Three**
+**Big Data at Scale** &nbsp;&middot;&nbsp; **Next-Gen AI** &nbsp;&middot;&nbsp; **Off-Ball Intelligence** &nbsp;&middot;&nbsp; **Real-Time Dashboards**
 
 ---
 
-#### About
+#### Capabilities
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur interdum, nisl nunc egestas nisi, euismod aliquam nisl nunc eget nisi. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+- **Pose Estimation** — Multi-player skeletal pose inference at 25 fps, 17 keypoints per player
+- **Movement Signatures** — Compact embeddings for off-ball behavior across leagues and seasons
+- **Tactical Fingerprinting** — Automatic characterization of playing styles, formations, and transitions
+- **Movement Search** — Query tactical events across entire seasons with zero manual tagging
+- **Injury Risk Signals** — Detect biomechanical drift weeks before clinical symptoms appear
+- **Predictive Runs** — Short-horizon probabilistic forecasts that surface runs and pressing triggers
 
-#### Stack
+#### Technology
 
-| Layer | Technologies |
+| Layer | Description |
 |---|---|
-| **Category A** | Tool, Tool, Tool |
-| **Category B** | Tool, Tool, Tool |
-| **Category C** | Tool, Tool, Tool |
+| **Hierarchical Motion Transformer** | Multi-scale transformer with graph attention and causal temporal layers |
+| **Football Foundation Model** | Pre-trained on millions of movement sequences, transferable to any downstream task |
+| **Neural Match Simulation** | Diffusion-based generative rollouts for counterfactual tactical analysis |
+| **Edge-Optimized Inference** | Quantized distillation and hardware-aware compilation for sub-frame latency |
 
-#### Get involved
+#### Team
 
-Lorem ipsum dolor sit amet. Check out our [Contributing Guide](https://github.com/org/.github/blob/main/CONTRIBUTING.md) to get started.
-
-- Browse [open issues](https://github.com/orgs/org/repositories) across our repositories
-- Read our [Code of Conduct](https://github.com/org/.github/blob/main/CODE_OF_CONDUCT.md)
-- Reach out at [email@example.com](mailto:email@example.com)
+- **Kemal İnecik** — CEO & Co-Founder · ML PhD at Helmholtz Munich & TUM
+- **Özgür Ak** — Co-Founder · Engineering
+- **Fabian J. Theis** — Co-Founder · ML & AI · Professor at TUM, Director at Helmholtz Munich
+- **Şeref Çiçek** — Co-Founder · Football · UEFA A licensed coach, former Beşiktaş & Turkey NT
 
 ---
 
-<sub>Location &nbsp;·&nbsp; <a href="https://example.com">example.com</a> &nbsp;·&nbsp; <a href="mailto:email@example.com">email@example.com</a></sub>
+<sub>Munich &nbsp;·&nbsp; <a href="https://withoutball.com">withoutball.com</a> &nbsp;·&nbsp; <a href="https://www.linkedin.com/company/withoutball/">LinkedIn</a> &nbsp;·&nbsp; <a href="https://twitter.com/withoutballhq">Twitter</a> &nbsp;·&nbsp; <a href="https://www.instagram.com/withoutballhq/">Instagram</a></sub>
