@@ -33,7 +33,7 @@ From personal biomechanics to professional match analytics — a next-generation
 - **Kemal İnecik** — CEO & Co-Founder · ML PhD at Helmholtz Munich & TUM
 - **Özgür Ak** — Co-Founder · Engineering
 - **Fabian J. Theis** — Co-Founder · ML & AI · Professor at TUM, Director at Helmholtz Munich
-- **Şeref Çiçek** — Co-Founder · Football · UEFA A licensed coach, former Beşiktaş & Turkey NT
+- **Şeref Çiçek** — Co-Founder · Football · UEFA Pro licensed coach, former Beşiktaş & Turkey NT
 
 ---
 
