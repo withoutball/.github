@@ -135,10 +135,20 @@ EXCLUSIONS=(
     "coverage.xml"
     "*.py[cod]"
     ".eggs"
+    "pose-transformer/outputs"
+    "pose-transformer/.cache"
+    "pose-transformer/logs"
+    "data/hackathon/data/DFL-MAT-J03WOY"
+    "data/hackathon/data/DFL-MAT-J03WPY"
+    "data/hackathon/data/DFL-MAT-J03WQQ"
+    "data/hackathon/data/DFL-MAT-J03WR9"
 )
 
 # Directories to pull FROM the server (not pushed with code)
-SYNC_DIRS=("pose-transformer")
+SYNC_DIRS=(
+    "pose-transformer"
+    "data/hackathon/data"
+)
 
 # SSH / rsync tunables
 SSH_CONNECT_TIMEOUT=20
