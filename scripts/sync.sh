@@ -143,7 +143,6 @@ EXCLUSIONS=(
 
 # Directories to pull FROM the server (not pushed with code)
 SYNC_DIRS=(
-    "pose-transformer"
     "data/hackathon/data/DFL-MAT-J03WOH"
 )
 
