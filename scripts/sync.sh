@@ -134,16 +134,22 @@ EXCLUSIONS=(
     ".coverage"
     "coverage.xml"
     "*.py[cod]"
+    "site/node_modules"
+    "site/dist"
+    "site/.astro"
     ".eggs"
-    "pose-transformer/outputs"
+    "outputs/*/*/checkpoints"
+    "outputs/**/*.pt"
     "pose-transformer/.cache"
-    "pose-transformer/logs"
     "data/hackathon/data"
+    ".playwright-cli"
 )
 
 # Directories to pull FROM the server (not pushed with code)
 SYNC_DIRS=(
     "data/hackathon/data/DFL-MAT-J03WOH"
+    "pose-transformer/logs"
+    "pose-transformer/outputs"
 )
 
 # SSH / rsync tunables
