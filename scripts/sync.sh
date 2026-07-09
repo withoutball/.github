@@ -143,6 +143,7 @@ EXCLUSIONS=(
     "pose-transformer/.cache"
     "data/hackathon/data"
     ".playwright-cli"
+    "site_check"
 )
 
 # Directories to pull FROM the server (not pushed with code)
